@@ -7,6 +7,7 @@ import '../models/product.dart';
 import '../models/cart_item.dart';
 import '../services/api_service.dart';
 import '../services/local_storage_service.dart';
+import '../services/db_helper.dart';
 
 class ProductProvider extends ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -29,12 +30,9 @@ class ProductProvider extends ChangeNotifier {
     _authSubscription = _auth.authStateChanges().listen((user) {
       if (user != null) {
         _listenToFavorites(user.uid);
-        _listenToCart(user.uid);
       } else {
         _favoritesSubscription?.cancel();
-        _cartSubscription?.cancel();
         favorites = [];
-        cart = [];
         notifyListeners();
       }
     });
@@ -54,6 +52,7 @@ class ProductProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
+      await loadCartLocal();
       await initializeProductsMigration();
       _listenToProducts();
     } catch (e) {
@@ -188,34 +187,14 @@ class ProductProvider extends ChangeNotifier {
     });
   }
 
-  // Real-time listener for user-specific cart
-  void _listenToCart(String userId) {
-    _cartSubscription?.cancel();
-    _cartSubscription = _firestore
-        .collection('users')
-        .doc(userId)
-        .collection('cart')
-        .snapshots()
-        .listen((snapshot) async {
-      cart = snapshot.docs.map((doc) => CartItem.fromJson(doc.data())).toList();
+  // Load cart from SQLite
+  Future<void> loadCartLocal() async {
+    try {
+      cart = await DatabaseHelper.instance.getCartItems();
       notifyListeners();
-
-      // Save to local cache
-      try {
-        await LocalStorageService.saveJson(
-          "cart.json",
-          cart.map((e) => e.toJson()).toList(),
-        );
-      } catch (e) {
-        debugPrint("Local storage cart save error: $e");
-      }
-    }, onError: (error) async {
-      debugPrint("Firestore cart stream error: $error");
-      // Fallback to local cache
-      final data = await LocalStorageService.readJson("cart.json");
-      cart = data.map<CartItem>((e) => CartItem.fromJson(Map<String, dynamic>.from(e))).toList();
-      notifyListeners();
-    });
+    } catch (e) {
+      debugPrint("Load cart error: $e");
+    }
   }
 
   // Toggle favorite in Firestore (Optional requirements)
@@ -253,88 +232,55 @@ class ProductProvider extends ChangeNotifier {
     return favorites.any((e) => e.id == id);
   }
 
-  // Add to cart
+  // Add to cart local
   Future<void> addToCart(Product product) async {
-    final user = _auth.currentUser;
-    if (user == null) return;
-
-    final docRef = _firestore
-        .collection('users')
-        .doc(user.uid)
-        .collection('cart')
-        .doc(product.id.toString());
-
     final existingIndex = cart.indexWhere((e) => e.productId == product.id);
 
     try {
       if (existingIndex >= 0) {
         // Increment quantity
         final item = cart[existingIndex];
-        await docRef.update({'quantity': item.quantity + 1});
+        item.quantity++;
+        await DatabaseHelper.instance.updateCartItemQuantity(product.id, item.quantity);
       } else {
         // Add new
         final newItem = CartItem(productId: product.id, quantity: 1);
-        await docRef.set(newItem.toJson());
-      }
-    } catch (e) {
-      debugPrint("Firestore add to cart error: $e");
-      // Fallback local
-      if (existingIndex >= 0) {
-        cart[existingIndex].quantity++;
-      } else {
-        cart.add(CartItem(productId: product.id, quantity: 1));
+        cart.add(newItem);
+        await DatabaseHelper.instance.insertCartItem(newItem);
       }
       notifyListeners();
+    } catch (e) {
+      debugPrint("SQLite add to cart error: $e");
     }
   }
 
-  // Remove from cart
+  // Remove from cart local
   Future<void> removeFromCart(int productId) async {
-    final user = _auth.currentUser;
-    if (user == null) return;
-
-    final docRef = _firestore
-        .collection('users')
-        .doc(user.uid)
-        .collection('cart')
-        .doc(productId.toString());
-
     try {
-      await docRef.delete();
-    } catch (e) {
-      debugPrint("Firestore remove from cart error: $e");
-      // Fallback local
       cart.removeWhere((e) => e.productId == productId);
+      await DatabaseHelper.instance.deleteCartItem(productId);
       notifyListeners();
+    } catch (e) {
+      debugPrint("SQLite remove from cart error: $e");
     }
   }
 
-  // Update cart item quantity
+  // Update cart item quantity local
   Future<void> updateCartQuantity(int productId, int quantity) async {
     if (quantity <= 0) {
       await removeFromCart(productId);
       return;
     }
 
-    final user = _auth.currentUser;
-    if (user == null) return;
-
-    final docRef = _firestore
-        .collection('users')
-        .doc(user.uid)
-        .collection('cart')
-        .doc(productId.toString());
-
     try {
-      await docRef.update({'quantity': quantity});
-    } catch (e) {
-      debugPrint("Firestore update cart error: $e");
-      // Fallback local
       final existingIndex = cart.indexWhere((e) => e.productId == productId);
       if (existingIndex >= 0) {
         cart[existingIndex].quantity = quantity;
+        await DatabaseHelper.instance.updateCartItemQuantity(productId, quantity);
       }
       notifyListeners();
+    } catch (e) {
+      debugPrint("SQLite update cart error: $e");
     }
   }
 }

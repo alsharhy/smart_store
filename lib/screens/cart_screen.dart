@@ -43,9 +43,9 @@ class CartScreen extends StatelessWidget {
                             child: Icon(Icons.shopping_bag_outlined, size: 80, color: const Color(0xFF6C63FF).withOpacity(0.5)),
                           ),
                           const SizedBox(height: 24),
-                          const Text(
+                          Text(
                             'سلة التسوق فارغة',
-                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Color(0xFF2D3142)),
+                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: Theme.of(context).textTheme.bodyLarge?.color),
                           ),
                           const SizedBox(height: 8),
                           Text(
@@ -71,7 +71,7 @@ class CartScreen extends StatelessWidget {
                         return Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: Theme.of(context).cardColor,
                             borderRadius: BorderRadius.circular(24),
                             boxShadow: [
                               BoxShadow(
@@ -106,7 +106,7 @@ class CartScreen extends StatelessWidget {
                                   children: [
                                     Text(
                                       p.title,
-                                      style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: Color(0xFF2D3142)),
+                                      style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: Theme.of(context).textTheme.bodyLarge?.color),
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
                                     ),
@@ -129,10 +129,10 @@ class CartScreen extends StatelessWidget {
                                           child: Container(
                                             padding: const EdgeInsets.all(4),
                                             decoration: BoxDecoration(
-                                              color: const Color(0xFFF0F2F8),
+                                              color: Theme.of(context).scaffoldBackgroundColor,
                                               borderRadius: BorderRadius.circular(8),
                                             ),
-                                            child: const Icon(Icons.remove_rounded, size: 18, color: Color(0xFF2D3142)),
+                                            child: Icon(Icons.remove_rounded, size: 18, color: Theme.of(context).textTheme.bodyLarge?.color),
                                           ),
                                         ),
                                         Padding(
@@ -181,7 +181,7 @@ class CartScreen extends StatelessWidget {
             ),
             if (cart.isNotEmpty)
               Container(
-                padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
+                padding: const EdgeInsets.fromLTRB(24, 24, 24, 110),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
@@ -199,7 +199,7 @@ class CartScreen extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text('المجموع الفرعي', style: TextStyle(fontWeight: FontWeight.w600, color: Colors.grey)),
-                        Text('${total.toStringAsFixed(2)} ر.س', style: const TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF2D3142))),
+                        Text('${total.toStringAsFixed(2)} ر.س', style: TextStyle(fontWeight: FontWeight.w800, color: Theme.of(context).textTheme.bodyLarge?.color)),
                       ],
                     ),
                     const SizedBox(height: 10),
@@ -211,7 +211,7 @@ class CartScreen extends StatelessWidget {
                           shipping == 0 ? 'مجاني' : '$shipping ر.س',
                           style: TextStyle(
                             fontWeight: FontWeight.w800,
-                            color: shipping == 0 ? const Color(0xFF10B981) : const Color(0xFF2D3142),
+                            color: shipping == 0 ? const Color(0xFF10B981) : Theme.of(context).textTheme.bodyLarge?.color,
                           ),
                         ),
                       ],
@@ -223,7 +223,7 @@ class CartScreen extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text('الإجمالي النهائي', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF2D3142))),
+                        Text('الإجمالي النهائي', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Theme.of(context).textTheme.bodyLarge?.color)),
                         Text('${(total + shipping).toStringAsFixed(2)} ر.س', style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF6C63FF))),
                       ],
                     ),

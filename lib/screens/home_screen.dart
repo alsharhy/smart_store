@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../providers/product_provider.dart';
+import '../providers/theme_provider.dart';
 import '../widgets/product_card.dart';
 import '../widgets/section_header.dart';
 import '../models/category.dart';
@@ -53,7 +54,7 @@ class _HomeScreenState extends State<HomeScreen> {
         }).toList();
 
         return Scaffold(
-          backgroundColor: const Color(0xFFF0F2F8),
+          backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           body: provider.isLoading
               ? const Center(
                   child: CircularProgressIndicator(color: Color(0xFF6C63FF)),
@@ -91,18 +92,44 @@ class _HomeScreenState extends State<HomeScreen> {
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                GestureDetector(
-                                  onTap: () async {
-                                    await FirebaseAuth.instance.signOut();
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.all(10),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withOpacity(0.15),
-                                      borderRadius: BorderRadius.circular(14),
+                                Row(
+                                  children: [
+                                    GestureDetector(
+                                      onTap: () async {
+                                        await FirebaseAuth.instance.signOut();
+                                      },
+                                      child: Container(
+                                        padding: const EdgeInsets.all(10),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withOpacity(0.15),
+                                          borderRadius: BorderRadius.circular(14),
+                                        ),
+                                        child: const Icon(Icons.logout_rounded, color: Colors.white, size: 22),
+                                      ),
                                     ),
-                                    child: const Icon(Icons.logout_rounded, color: Colors.white, size: 22),
-                                  ),
+                                    const SizedBox(width: 8),
+                                    Consumer<ThemeProvider>(
+                                      builder: (context, themeProvider, child) {
+                                        return GestureDetector(
+                                          onTap: () {
+                                            themeProvider.toggleTheme(!themeProvider.isDarkMode);
+                                          },
+                                          child: Container(
+                                            padding: const EdgeInsets.all(10),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white.withOpacity(0.15),
+                                              borderRadius: BorderRadius.circular(14),
+                                            ),
+                                            child: Icon(
+                                              themeProvider.isDarkMode ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+                                              color: Colors.white,
+                                              size: 22,
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                    ),
+                                  ],
                                 ),
                                 Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
