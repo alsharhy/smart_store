@@ -11,18 +11,62 @@ import 'providers/theme_provider.dart';
 import 'screens/main_navigation_screen.dart';
 import 'screens/login_screen.dart';
 
-void main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => ProductProvider()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => ProductProvider()),
       ],
-      child: const MyApp(),
+      child: const AppLifecycleHandler(),
     ),
   );
+}
+
+class AppLifecycleHandler extends StatefulWidget {
+  const AppLifecycleHandler({super.key});
+
+  @override
+  State<AppLifecycleHandler> createState() => _AppLifecycleHandlerState();
+}
+
+class _AppLifecycleHandlerState extends State<AppLifecycleHandler> {
+  final Future<FirebaseApp> _initialization = Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder(
+      future: _initialization,
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return MaterialApp(
+            debugShowCheckedModeBanner: false,
+            home: Scaffold(
+              body: Center(
+                child: Text('Firebase Error: ${snapshot.error}', textDirection: TextDirection.ltr),
+              ),
+            ),
+          );
+        }
+
+        if (snapshot.connectionState == ConnectionState.done) {
+          return const MyApp();
+        }
+
+        return const MaterialApp(
+          debugShowCheckedModeBanner: false,
+          home: Scaffold(
+            body: Center(
+              child: CircularProgressIndicator(color: Color(0xFF6C63FF)),
+            ),
+          ),
+        );
+      },
+    );
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -37,12 +81,16 @@ class MyApp extends StatelessWidget {
       title: 'سوقي',
       themeMode: themeProvider.themeMode,
       theme: ThemeData(
+        cardColor: Colors.white,
         primaryColor: const Color(0xFF6C63FF),
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFF6C63FF),
           secondary: const Color(0xFF8B5CF6),
         ),
-        textTheme: GoogleFonts.cairoTextTheme(Theme.of(context).textTheme),
+        textTheme: GoogleFonts.cairoTextTheme(ThemeData.light().textTheme).apply(
+          bodyColor: const Color(0xFF2D3142),
+          displayColor: const Color(0xFF2D3142),
+        ),
         scaffoldBackgroundColor: const Color(0xFFF0F2F8),
         appBarTheme: const AppBarTheme(
           backgroundColor: Colors.transparent,
@@ -51,13 +99,17 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       darkTheme: ThemeData.dark().copyWith(
+        cardColor: const Color(0xFF1E1E1E),
         primaryColor: const Color(0xFF6C63FF),
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFF6C63FF),
           secondary: const Color(0xFF8B5CF6),
           brightness: Brightness.dark,
         ),
-        textTheme: GoogleFonts.cairoTextTheme(ThemeData.dark().textTheme),
+        textTheme: GoogleFonts.cairoTextTheme(ThemeData.dark().textTheme).apply(
+          bodyColor: Colors.white,
+          displayColor: Colors.white,
+        ),
         scaffoldBackgroundColor: const Color(0xFF121212),
         appBarTheme: const AppBarTheme(
           backgroundColor: Colors.transparent,
